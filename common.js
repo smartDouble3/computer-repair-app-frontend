@@ -1,7 +1,5 @@
 
-const API_BASE =
-  localStorage.getItem('ticket_api_base') ||
-  'https://computer-repair-app-server.onrender.com/api/v1';
+localStorage.getItem('ticket_api_base') || 'https://computer-repair-app-server.onrender.com/api/v1'
 
 
 const HOST_BASE = API_BASE.replace(/\/api\/v1\/?$/, '');
