@@ -2,7 +2,7 @@
 // ใช้ค่าใน localStorage ก่อน (เผื่อสลับ endpoint ง่าย ๆ) ไม่มีให้ใช้ของ Render
 const API_BASE =
   localStorage.getItem('ticket_api_base') ||
-  'https://computer-repair-app-server.onrender.com/api/v1';
+  'https://computer-repair-app-server.onrender.com';
 
 // ตัด /api/v1 ออกเพื่อได้ host สำหรับรูป/ไฟล์
 const HOST_BASE = API_BASE.replace(/\/api\/v1\/?$/, '');
