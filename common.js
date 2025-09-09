@@ -15,7 +15,9 @@ function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
 function isAuthed(){ return !!getToken(); }
 
 async function api(path, { method='GET', body, headers={} } = {}){
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
+  const url = path.startsWith('http')
+  ? path
+  : `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
   const h = { Accept: 'application/json', ...headers };
   if (body && !(body instanceof FormData)) h['Content-Type'] = 'application/json';
   const tok = getToken(); if (tok) h['Authorization'] = `Bearer ${tok}`;
