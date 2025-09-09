@@ -1,8 +1,7 @@
-// ===== CONFIG
-// ใช้ค่าใน localStorage ก่อน (เผื่ออยากสลับ endpoint ง่าย ๆ) ไม่มีก็ใช้โดเมนบน Render
+
 const BASE =
   localStorage.getItem('ticket_api_base') ||
-  'https://<YOUR-BACKEND>.onrender.com/api/v1';
+  'https://computer-repair-app-server.onrender.com/api/v1';
 
 const TOKEN_KEY = 'ticket_token';
 
