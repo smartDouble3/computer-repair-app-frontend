@@ -1,0 +1,101 @@
+<!doctype html><html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>เมนูหลัก</title>
+  <link rel="stylesheet" href="form-theme.css" />
+  <script src="common.js" defer ></script>
+  <style>
+    .wrap { width:min(960px,92vw); margin:24px auto; }
+    .heading { text-align:center; color:#fff; font-size:48px; text-shadow:0 4px 8px rgba(0,0,0,.25); margin:6px 0 8px; }
+    .sub { text-align:center; color:#222; opacity:.85; margin-bottom:20px;height: 60px;}
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+    .card { background:#d1c4e9; border-radius:20px; padding:18px; box-shadow:0 10px 24px rgba(0,0,0,.18); transition:.2s transform; }
+    .card:hover { transform:translateY(-4px); }
+    .card h3 { margin:0 0 8px; color:#fff; text-shadow:0 3px 6px rgba(0,0,0,.25); }
+    .card p { margin:0; color:#222; opacity:.9; }
+    .action { display:block; margin-top:12px; background:#7e57c2; color:#fff; text-align:center; padding:10px 12px; border-radius:12px; text-decoration:none; font-weight:700;}
+    .danger { background:#e57373; }
+    .P_P{
+      height: 100px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="wrap">
+    <h1 class="heading">เมนูหลัก</h1>
+    <p class="sub">เลือกสิ่งที่ต้องการทำต่อไป</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>ประวัติของฉัน</h3>
+        <p class="P_P">ดูใบงานที่เคยแจ้งซ่อมทั้งหมด</p>
+        <a class="action" href="my-tickets.html">เปิดประวัติ</a>
+      </div>
+
+      <div class="card">
+        <h3>แจ้งซ่อมใหม่</h3>
+        <p class="P_P">สร้างใบงานใหม่ พร้อมรายละเอียดอาการ</p>
+        <a class="action" href="new-ticket.html">แจ้งซ่อม</a>
+      </div>
+
+      <div class="card">
+        <h3>โปรไฟล์ของฉัน</h3>
+        <p class="P_P">ดู/อัปเดตรูปโปรไฟล์ และข้อมูลติดต่อ</p>
+        <a class="action" href="profile.html">ไปที่โปรไฟล์</a>
+      </div>
+
+      <div class="card">
+        <h3>พนักงาน</h3>
+        <p class="P_P">ดูรายชื่อพนักงานและรูปภา</p>
+        <a class="action" href="employees.html">ดูพนักงาน</a>
+      </div>
+
+      <div class="card" id="adminCard">
+         <h3>งานทั้งหมด (Admin)</h3>
+         <p class="P_P">ดูทุกใบงานในระบบ</p>
+        <a class="action" href="admin.html">เปิดหน้าแอดมิน</a>
+      </div>
+
+
+      <div class="card">
+        <h3>ออกจากระบบ</h3>
+        <p class="P_P">ล้างโทเค็นและกลับสู่หน้าเข้าสู่ระบบ</p>
+       <button id="logoutBtn" class="action danger" >ออกจากระบบ</button>
+      </div>
+    </div>
+  </div>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAuth();
+
+  const nav = document.getElementById('nav');
+  if (nav) nav.outerHTML = renderNav('menu');
+
+  // ผูกปุ่มออกจากระบบ
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearToken();
+      location.href = 'login.html';
+    });
+  }
+
+  // เช็คสิทธิ์แอดมินจากแบ็กเอนด์
+  try {
+    const me = await api('/users/me');
+    console.log('ME:', me);
+    const adminCard = document.getElementById('adminCard');
+    adminCard.style.display = (me.role === 'admin') ? 'block' : 'none';
+  } catch (err) {
+    console.warn('Fetch /users/me failed', err);
+    location.href = 'login.html';
+  }
+});
+</script>
+</body>
+</html>

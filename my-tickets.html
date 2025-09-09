@@ -1,0 +1,188 @@
+<!doctype html><html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ประวัติการแจ้งซ่อม</title>
+  <link rel="stylesheet" href="form-theme.css" />
+  <script src="common.js" defer></script>
+  <style>
+    .shell{max-width:1000px;margin:24px auto;}
+    .hero{background:linear-gradient(90deg,#f6a21b,#e29012);padding:16px;border-radius:14px 14px 0 0;}
+    .hero h1{margin:0;color:#222;font-size:26px;}
+    .tabs{display:flex;gap:12px;margin-top:10px;}
+    .tab{padding:6px 12px;border-radius:8px;background:#fff3;font-weight:700;color:#222;cursor:pointer;}
+    .tab.active{background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12);}
+    .card{background:#fff;border:1px solid #ddd;padding:16px;border-radius:0 0 14px 14px;}
+    .stats{display:flex;gap:16px;margin:12px 0;}
+    .stat{flex:1;background:#f3f4f6;border-radius:12px;padding:14px;text-align:center;font-weight:700;}
+    table{width:100%;border-collapse:collapse;margin-top:16px;}
+    th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;}
+    th{background:#f9fafb;}
+    .status{padding:4px 8px;border-radius:8px;font-weight:600;}
+    .OPEN{background:#fef3c7;color:#92400e;}
+    .IN_PROGRESS{background:#dbeafe;color:#1e3a8a;}
+    .DONE{background:#dcfce7;color:#166534;}
+    .actions button{margin-right:6px;padding:4px 8px;border:0;border-radius:6px;cursor:pointer;}
+    .edit{background:#fbbf24;color:#fff;} .del{background:#ef4444;color:#fff;}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <div class="hero">
+    <h1>📋 ประวัติการแจ้งซ่อม</h1>
+    <div class="tabs">
+      <span class="tab active" data-status="">ทั้งหมด</span>
+      <span class="tab" data-status="OPEN">รอดำเนินการ</span>
+      <span class="tab" data-status="IN_PROGRESS">กำลังซ่อม</span>
+      <span class="tab" data-status="DONE">เสร็จสิ้น</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat" id="countOpen">0 รอดำเนินการ</div>
+      <div class="stat" id="countProg">0 กำลังซ่อม</div>
+      <div class="stat" id="countDone">0 เสร็จสิ้น</div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
+  <input id="from" type="date">
+  <span>ถึง</span>
+  <input id="to" type="date">
+  <button id="apply">กรอง</button>
+</div>
+
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>วันที่แจ้ง</th><th>อุปกรณ์</th><th>รายละเอียด</th>
+          <th>สถานะ</th><th>อัปเดตล่าสุด</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  requireAuth();            // ถ้าไม่มี token จะเด้งไป login
+  const msg = document.getElementById('msg') || { textContent: '' };
+  load('ALL');
+
+  // ปุ่มแท็บตัวอย่าง (ให้มีปุ่มที่มี id ตามนี้ในหน้า)
+  ['ALL','OPEN','IN_PROGRESS','DONE'].forEach(st => {
+    const el = document.getElementById('tab-' + st);
+    if (el) el.onclick = () => load(st);
+  });
+
+  async function load(status = 'ALL') {
+    msg.textContent = '';
+    const list = document.getElementById('rows');
+    if (list) list.innerHTML = '<tr><td colspan="6">กำลังโหลด...</td></tr>';
+
+    try {
+      const qs = new URLSearchParams({ page: 1, limit: 50, sort: '-created_at' });
+      if (status !== 'ALL') qs.set('status', status);
+
+      const data = await api('/tickets/me?' + qs.toString());
+      const items = data.items || data || [];
+
+      // นับสถานะ (ถ้าหน้าไม่มีที่แสดง count ก็ข้ามได้)
+      const counts = { OPEN:0, IN_PROGRESS:0, DONE:0 };
+      items.forEach(t => { if (counts[t.status] != null) counts[t.status]++; });
+      setText('count-open', counts.OPEN);
+      setText('count-inprogress', counts.IN_PROGRESS);
+      setText('count-done', counts.DONE);
+
+      if (!items.length) {
+        if (list) list.innerHTML = '<tr><td colspan="6">ยังไม่มีใบงาน</td></tr>';
+        return;
+      }
+
+      if (list) {
+        list.innerHTML = items.map((it, i) => `
+          <tr>
+            <td>#${it.id}</td>
+            <td>${fmtDate(it.created_at)}</td>
+            <td>${escapeHtml(it.device_brand || '-')}/${escapeHtml(it.device_model || '-')}</td>
+            <td>${escapeHtml(it.title || '-')}</td>
+            <td>${badge(it.status)}</td>
+            <td>${fmtDate(it.updated_at)}</td>
+          </tr>
+        `).join('');
+      }
+    } catch (err) {
+      console.error('LOAD /tickets/me failed', err);
+      if (msg) msg.textContent = err?.data?.message || err.message || 'โหลดไม่สำเร็จ';
+    }
+  }
+
+  function setText(id, v){ const el = document.getElementById(id); if (el) el.textContent = v; }
+  function fmtDate(s){ try{ return new Date(s).toLocaleString(); }catch{ return '-'; } }
+  function escapeHtml(x){ return String(x||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+  function badge(st){
+    const m = { OPEN:'รอดำเนินการ', IN_PROGRESS:'กำลังซ่อม', DONE:'เสร็จสิ้น' };
+    return `<span class="chip chip-${(st||'').toLowerCase()}">${m[st]||st}</span>`;
+  }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // ต้องมี token ก่อน
+  requireAuth();
+
+  const listBox = document.getElementById('ticketTableBody') || document.getElementById('list');
+  const counterWaiting = document.getElementById('count-waiting');
+  const counterRepair  = document.getElementById('count-repair');
+  const counterDone    = document.getElementById('count-done');
+
+  async function loadTickets() {
+    try {
+      // ตัวอย่าง: ดึงของผู้ใช้คนนี้
+      const r = await api('/tickets/me?page=1&limit=50&sort=-updated_at');
+      const items = r.items || r || []; // รองรับทั้งรูป {items:[]} หรือ []
+
+      // นับสถานะ
+      const cWait  = items.filter(x => x.status === 'OPEN' || x.status === 'WAITING').length;
+      const cDoing = items.filter(x => x.status === 'IN_PROGRESS').length;
+      const cDone  = items.filter(x => x.status === 'DONE' || x.status === 'CLOSED').length;
+      if (counterWaiting) counterWaiting.textContent = cWait;
+      if (counterRepair)  counterRepair.textContent  = cDoing;
+      if (counterDone)    counterDone.textContent    = cDone;
+
+      if (!items.length) {
+        if (listBox) listBox.innerHTML = '<tr><td colspan="99" style="opacity:.7;padding:12px">ยังไม่มีใบงาน</td></tr>';
+        return;
+      }
+
+      // สร้างแถวตาราง
+      const rows = items.map((t, i) => `
+        <tr>
+          <td>#${t.id}</td>
+          <td>${new Date(t.created_at).toLocaleDateString()}</td>
+          <td>${t.device_brand || '-'} ${t.device_model || ''}</td>
+          <td>${escapeHtml(t.description || t.title || '')}</td>
+          <td>${t.status}</td>
+          <td>${new Date(t.updated_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      if (listBox) listBox.innerHTML = rows;
+    } catch (err) {
+      console.error('LOAD TICKETS FAILED', err);
+      if (listBox) listBox.innerHTML =
+        `<tr><td colspan="99" style="color:#b00020;padding:12px">โหลดไม่สำเร็จ: ${escapeHtml(err?.data?.message || err.message || 'unknown')}</td></tr>`;
+      // ถ้าโดน 401 ให้ส่งกลับหน้า login
+      if (err.status === 401) { clearToken(); location.href = 'login.html'; }
+    }
+  }
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+
+  loadTickets();
+});
+</script>
+
+</body>
+</html>

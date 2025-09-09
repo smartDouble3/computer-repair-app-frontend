@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>สมัครสมาชิก</title>
+  <link rel="stylesheet" href="form-theme.css">
+  <script src="common.js" defer></script>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #6a5acd, #8a2be2);
+    }
+    .container {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 26px;
+      color: #333;
+    }
+    .profile-picture-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .profile-picture {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid #ddd;
+      object-fit: cover;
+    }
+    .profile-upload {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #6a5acd;
+      color: #fff;
+      border-radius: 50%;
+      padding: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .sign_box {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+    .btu button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, #6a5acd, #8a2be2);
+      color: #fff;
+    }
+    .DOT {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .DOT span {
+      color: #6a5acd;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #signUpMessage {
+      margin-top: 10px;
+      font-size: 14px;
+      color: red;
+    }
+    .profile-picture-container{
+  position:relative;
+  display:inline-block;
+  margin-bottom:20px;
+}
+
+/* กรอบกลมบังคับสัดส่วน 1:1 */
+.pfp-wrap{
+  width:120px;                /* ปรับได้ */
+  height:120px;
+  border-radius:50%;
+  overflow:hidden;
+  border:3px solid #ddd;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+/* รูปด้านในให้เต็มกรอบ */
+.pfp-wrap img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover;           /* ครอบแบบไม่บีบ */
+  display:block;
+}
+
+/* ปุ่มกล้อง */
+.profile-upload{
+  position:absolute;
+  right:0;
+  bottom:0;
+  transform: translate(30%, 30%); /* ดันออกนิดให้ซ้อนมุมพอดี */
+  background:#6a5acd;
+  color:#fff;
+  width:36px; height:36px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,.2);
+}
+.profile-upload input{ display:none; }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>สมัครสมาชิก</h1>
+    <form id="signUpFormElement" enctype="multipart/form-data">
+    <div class="profile-picture-container">
+  <div class="pfp-wrap">
+    <img id="signUpProfilePic" src="default-avatar.png" alt="Profile">
+  </div>
+
+  <label class="profile-upload" for="profileImageInput">📷
+    <input type="file" id="profileImageInput" accept="image/*" hidden>
+  </label>
+</div>
+      <div class="input-group">
+        <input type="text" placeholder="ชื่อ" required id="Name_sign" class="sign_box">
+      </div>
+      <div class="input-group">
+        <input type="email" placeholder="อีเมล" required id="E_mail_sign" class="sign_box">
+      </div>
+      <div class="input-group">
+        <input type="password" placeholder="รหัสผ่าน" required minlength="6" id="Password_sign" class="sign_box">
+      </div>
+      <div class="input-group">
+        <input type="tel" placeholder="เบอร์โทรศัพท์" id="Tel_sign" class="sign_box">
+      </div>
+      <div class="btu">
+        <button type="submit" id="SignUpBtn">สมัครสมาชิก</button>
+      </div>
+    </form>
+    <div id="signUpMessage"></div>
+    <div class="DOT">
+      <p>มีบัญชีแล้ว? <span onclick="location.href='login.html'">เข้าสู่ระบบ</span></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('signUpFormElement');
+    const msg = document.getElementById('signUpMessage');
+    const profilePic = document.getElementById('signUpProfilePic');
+    const profileInput = document.getElementById('profileImageInput');
+
+    profileInput.onchange = e => {
+      const f = e.target.files[0];
+      if (f) profilePic.src = URL.createObjectURL(f);
+    };
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      try {
+        const fd = new FormData();
+        fd.append('name', document.getElementById('Name_sign').value.trim());
+        fd.append('email', document.getElementById('E_mail_sign').value.trim());
+        fd.append('password', document.getElementById('Password_sign').value);
+        fd.append('phone', document.getElementById('Tel_sign').value.trim());
+        if (profileInput.files[0]) fd.append('photo', profileInput.files[0]);
+
+        const res = await fetch(`${BASE}/auth/register`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'สมัครไม่สำเร็จ');
+
+        msg.style.color = 'green';
+        msg.textContent = 'สมัครสำเร็จ! กำลังพาไปยังหน้าเข้าสู่ระบบ...';
+        setTimeout(() => location.href = 'login.html', 1000);
+      } catch (err) {
+        msg.style.color = 'red';
+        msg.textContent = err.message;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!doctype html><html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Tickets (Admin)</title>
+  <link rel="stylesheet" href="form-theme.css">
+  <script src="common.js" defer></script>
+  <style>
+    .wrap{width:min(1100px,95vw);margin:28px auto}
+    .heading{color:black;text-align:center;font-size:56px;text-shadow:0 6px 16px rgba(0,0,0,.25);margin:0 0 16px}
+    .row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    select,input{height:44px;border-radius:12px;border:1px solid #999;padding:0 12px;font-size:16px;min-width:220px}
+    .card{background:#7e57c2;color:#ffe0b2;border-radius:20px;padding:14px 16px;margin:12px 0;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+    .muted{opacity:.85;color:black}
+    .back{background:#90a4ae;color:#ffe0b2}
+    .ticket{background:#fff;color:#222;border-radius:14px;padding:12px;box-shadow:0 8px 18px rgba(0,0,0,.15)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:8px;background:#e0e0e0;margin-left:6px;font-size:12px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="heading">All Tickets (Admin)</h1>
+
+  <div class="row">
+    <select id="statusSel">
+      <option value="">ทั้งหมด</option>
+      <option value="OPEN">OPEN</option>
+      <option value="IN_PROGRESS">IN_PROGRESS</option>
+      <option value="DONE">DONE</option>
+      <option value="CANCELLED">CANCELLED</option>
+    </select>
+
+    <input id="pageInp" type="number" min="1" value="1" placeholder="page">
+
+    <select id="sortSel">
+      <option value="-created_at">ใหม่ → เก่า (created_at DESC)</option>
+      <option value="created_at">เก่า → ใหม่ (created_at ASC)</option>
+      <option value="-updated_at">อัปเดตล่าสุด</option>
+    </select>
+
+    <button id="reloadBtn" class="btn">โหลดใหม่</button>
+  </div>
+
+  <div id="list" class="card">โหลด...</div>
+  <a class="card back" href="menu.html">← กลับเมนู</a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  requireAuth();
+
+  // ยืนยันสิทธิ์แอดมินก่อน
+  try{
+    const me = await api('/users/me');
+    if(me.role !== 'admin'){
+      alert('หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
+      location.href = 'menu.html';
+      return;
+    }
+  }catch(err){
+    alert('ตรวจสิทธิ์ไม่สำเร็จ: ' + (err.message||''));
+    location.href = 'login.html';
+    return;
+  }
+
+  // ควบคุม UI
+  const statusSel = document.getElementById('statusSel');
+  const pageInp   = document.getElementById('pageInp');
+  const sortSel   = document.getElementById('sortSel');
+  const reloadBtn = document.getElementById('reloadBtn');
+
+  const doLoad = () => loadTickets({
+    status: statusSel.value,
+    page: parseInt(pageInp.value||'1',10) || 1,
+    sort: sortSel.value
+  });
+
+  reloadBtn.onclick = doLoad;
+  statusSel.onchange = doLoad; sortSel.onchange = doLoad; pageInp.onchange = doLoad;
+
+  doLoad();
+}
+
+async function loadTickets({status='', page=1, limit=10, sort='-created_at'}){
+  const list = document.getElementById('list');
+  list.className = 'card';
+  list.textContent = 'กำลังโหลด...';
+
+  try{
+    const q = new URLSearchParams({ page, limit, sort });
+    if(status) q.set('status', status);
+
+    // ดึงรายการ (เฉพาะแอดมินถึงเรียก endpoint นี้ได้)
+    const r = await api('/tickets?' + q.toString());
+    const items = r.items || [];
+
+    if(items.length === 0){
+      list.innerHTML = '<div class="muted">— ไม่พบงาน —</div>';
+      return;
+    }
+
+    list.innerHTML = items.map(it => renderTicket(it)).join('');
+  }catch(err){
+    console.error(err);
+    list.className = 'card';
+    list.innerHTML = `<div>โหลดไม่สำเร็จ: <b>${escapeHtml(err.message||'Error')}</b></div>`;
+  }
+}
+
+function renderTicket(it){
+  return `
+    <div class="ticket" style="margin:10px 0">
+      <div><b>#${it.id}</b> — ${escapeHtml(it.title||'')}
+        <span class="badge">${it.status||''}</span>
+        ${it.assigned_employee_id ? `<span class="badge">assign: ${it.assigned_employee_id}</span>` : ''}
+      </div>
+      ${it.description ? `<div class="muted" style="margin-top:4px">${escapeHtml(it.description)}</div>` : ''}
+      <div class="muted" style="margin-top:6px">
+        ยี่ห้อ: ${escapeHtml(it.device_brand||'-')} · รุ่น: ${escapeHtml(it.device_model||'-')}
+      </div>
+      <div class="muted" style="margin-top:4px">
+        created: ${it.created_at} · updated: ${it.updated_at}
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;' }[c])); }
+</script>
+</body>
+</html>

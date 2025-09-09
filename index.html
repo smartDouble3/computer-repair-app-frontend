@@ -1,0 +1,9 @@
+<!doctype html><html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+    // ถ้ามี token → ไปเมนู / ไม่มี → ไปล็อกอิน
+   const t = localStorage.getItem('token') || localStorage.getItem('ticket_token');
+    location.replace(t ? 'menu.html' : 'login.html'); // <- ต้องสะกด menu.html
+  </script>
+<title>Redirect</title>
+</head><body></body></html>

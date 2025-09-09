@@ -1,0 +1,197 @@
+<!doctype html><html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>แจ้งซ่อมใหม่</title>
+  <link rel="stylesheet" href="form-theme.css" />
+  <script src="common.js" defer></script>
+  <style>
+    .shell { max-width: 980px; margin: 18px auto; }
+    .hero { background: linear-gradient(90deg,#f6a21b,#e29012); color:#222;
+            border-radius:18px 18px 0 0; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+    .hero h1 { margin:0; font-size:28px; display:flex; gap:10px; align-items:center; color:#222; }
+    .tabbar { display:flex; gap:12px; margin-top:10px; }
+    .tab { padding:8px 12px; border-radius:10px; background:#fff3; color:#222; font-weight:700; }
+    .tab.active { background:#fff; box-shadow:0 3px 10px rgba(0,0,0,.12); }
+    .card { background:#fff; border:1px solid #e5e7eb; border-top:0; padding:18px; border-radius:0 0 18px 18px;
+            box-shadow:0 16px 36px rgba(0,0,0,.08); }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+    .col-6 { grid-column:span 6; } .col-12{ grid-column:span 12; } .col-3{grid-column:span 3;}
+    .label { font-size:14px; color:#374151; margin:6px 0 4px; display:block; }
+    .req:after { content:" *"; color:#ef4444; }
+    .input, .select, textarea { width:100%; background:#fff; border:1px solid #d1d5db; border-radius:12px;
+      padding:12px 14px; font-size:16px; outline:none; box-shadow:0 2px 8px rgba(0,0,0,.06) inset; }
+    textarea { min-height:120px; resize:vertical; }
+    .hint { font-size:12px; color:#6b7280; margin-top:6px; }
+    .uploader { border:2px dashed #d1d5db; border-radius:12px; height:180px; display:flex; align-items:center; justify-content:center; background:#fafafa; }
+    .uploader input[type="file"]{ display:none; }
+    .upbtn { background:none; border:0; color:#6b7280; cursor:pointer; font-weight:700; }
+    .actions { display:flex; gap:12px; justify-content:flex-end; margin-top:18px; }
+    .btn { border:0; padding:12px 18px; border-radius:12px; font-weight:800; cursor:pointer; }
+    .btn.primary { background:linear-gradient(90deg,#6d63ff,#7e57c2); color:#fff; box-shadow:0 8px 20px rgba(126,87,194,.35); }
+    .msg { margin-top:10px; text-align:center; font-weight:700; }
+    .msg.err { color:#b91c1c; } .msg.ok { color:#0f766e; }
+    @media (max-width:840px){ .col-6,.col-3{grid-column:span 12;} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <h1>🛠️ ระบบแจ้งซ่อมคอมพิวเตอร์</h1>
+      <div class="tabbar">
+        <span class="tab active">แจ้งซ่อมใหม่</span>
+        <a class="tab" href="my-tickets.html" style="text-decoration:none">ประวัติการแจ้งซ่อม</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <form id="form" autocomplete="off">
+        <div class="grid">
+
+          <div class="col-6">
+            <label class="label">ชื่อผู้ติดต่อ</label>
+            <input id="c_name" class="input" placeholder="เช่น นางสาว สมใจ ใจดี">
+          </div>
+
+          <div class="col-6">
+            <label class="label req">เบอร์โทรศัพท์</label>
+            <input id="c_phone" class="input" placeholder="เช่น 081-234-5678" required>
+          </div>
+
+          <div class="col-6">
+            <label class="label">อีเมล</label>
+            <input id="c_email" type="email" class="input" placeholder="email@example.com">
+          </div>
+
+          <div class="col-6">
+            <label class="label">แผนก/หน่วยงาน</label>
+            <input id="c_dept" class="input" placeholder="เช่น แผนกบัญชี">
+          </div>
+
+          <div class="col-6">
+            <label class="label">สถานที่</label>
+            <input id="c_place" class="input" placeholder="เช่น อาคาร A ชั้น 3 ห้อง 301">
+          </div>
+
+          <div class="col-6">
+            <label class="label">ความเร่งด่วน</label>
+            <select id="c_urgency" class="select">
+              <option value="">— เลือกความเร่งด่วน —</option>
+              <option>LOW</option>
+              <option>MEDIUM</option>
+              <option>HIGH</option>
+              <option>CRITICAL</option>
+            </select>
+          </div>
+
+          <div class="col-6">
+            <label class="label req">ประเภทอุปกรณ์</label>
+            <select id="dev_type" class="select" required>
+              <option value="">— เลือกประเภทอุปกรณ์ —</option>
+              <option>PC</option>
+              <option>LAPTOP</option>
+              <option>PRINTER</option>
+              <option>MONITOR</option>
+              <option>NETWORK</option>
+              <option>OTHER</option>
+            </select>
+          </div>
+
+          <div class="col-3">
+            <label class="label">ยี่ห้อ/รุ่น (ย่อ)</label>
+            <input id="brand" class="input" placeholder="เช่น Dell / Lenovo">
+          </div>
+
+          <div class="col-3">
+            <label class="label">โมเดล</label>
+            <input id="model" class="input" placeholder="เช่น XPS 13 / IdeaPad">
+          </div>
+
+          <div class="col-12">
+            <label class="label req">รายละเอียดปัญหา</label>
+            <textarea id="desc" class="input" required
+              placeholder="อธิบายอาการที่พบ, ข้อความ error, และสิ่งที่เกิดขึ้นโดยละเอียด"></textarea>
+            <div class="hint">เช่น: คอมขึ้นจอฟ้า, เปิดช้าผิดปกติ, เครื่องดับเองเป็นครั้งคราว</div>
+          </div>
+    
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn gray" id="btnClear">ล้างข้อมูล</button>
+          <button class="btn primary" id="btnSubmit">ส่งคำขอซ่อม</button>
+        </div>
+        <div id="msg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    requireAuth(); // ต้องล็อกอินก่อน
+  });
+
+  const form = document.getElementById('form');
+  const msg  = document.getElementById('msg');
+  const btnClear = document.getElementById('btnClear');
+
+  btnClear.onclick = () => { form.reset(); msg.textContent=''; msg.className='msg'; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); msg.textContent=''; msg.className='msg';
+
+    // === สร้าง payload เพื่อยิงเข้า /tickets (รองรับฟิลด์ตาม backend ปัจจุบัน) ===
+    const title = buildTitle();
+    const details = buildDetailsBlock(); // แนบลง description ให้ช่างเห็นบริบท
+
+    const payload = {
+      title,
+      description: details,
+      device_brand: document.getElementById('brand').value.trim() || document.getElementById('dev_type').value,
+      device_model: document.getElementById('model').value.trim() || undefined,
+      // assigned_employee_id: undefined // ถ้ามีหน้าเลือกช่าง ค่อยส่งเพิ่ม
+    };
+
+    try{
+      const r = await api('/tickets', { method:'POST', body: payload });
+      msg.className = 'msg ok';
+      msg.textContent = 'ส่งใบงานสำเร็จ! กำลังพาไปหน้าประวัติ…';
+      setTimeout(()=> location.href = 'my-tickets.html', 700);
+    }catch(err){
+      msg.className = 'msg err';
+      msg.textContent = err.message || 'ส่งคำขอไม่สำเร็จ';
+    }
+  });
+
+  // ชื่อเรื่องอ่านง่ายสำหรับช่าง
+  function buildTitle(){
+    const type = document.getElementById('dev_type').value || '-';
+    const urgency = document.getElementById('c_urgency').value || 'NORMAL';
+    const short = document.getElementById('brand').value.trim() || document.getElementById('model').value.trim() || type;
+    return `[${urgency}] ${type} - ${short}`;
+  }
+
+  // รวมรายละเอียดบริบทผู้แจ้ง + สถานที่ + อาการ (แนบไว้ใน description)
+  function buildDetailsBlock(){
+    const v = id => document.getElementById(id).value.trim();
+    const lines = [
+      '=== ผู้แจ้ง/ติดต่อ ===',
+      `ชื่อผู้ติดต่อ: ${v('c_name')||'-'}`,
+      `โทรศัพท์: ${v('c_phone')||'-'}`,
+      `อีเมล: ${v('c_email')||'-'}`,
+      `แผนก/หน่วยงาน: ${v('c_dept')||'-'}`,
+      `สถานที่: ${v('c_place')||'-'}`,
+      `ความเร่งด่วน: ${v('c_urgency')||'NORMAL'}`,
+      '',
+      '=== อุปกรณ์ ===',
+      `ประเภท: ${v('dev_type')||'-'}`,
+      `ยี่ห้อ (ย่อ): ${v('brand')||'-'}`,
+      `โมเดล: ${v('model')||'-'}`,
+      '',
+      '=== รายละเอียดปัญหา ===',
+      v('desc') || '-'
+    ];
+    return lines.join('\n');
+  }
+  </script>
+</body>
+</html>

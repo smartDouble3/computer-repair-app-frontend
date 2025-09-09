@@ -1,0 +1,179 @@
+<!doctype html><html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Employees</title>
+  <link rel="stylesheet" href="form-theme.css">
+  <!-- สำคัญ: ใส่ defer -->
+  <script src="common.js" defer></script>
+  <style>
+    .wrap{width:min(1100px,95vw);margin:28px auto}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:16px}
+    .card{background:#d1c4e9;border-radius:20px;padding:12px;box-shadow:0 10px 24px rgba(0,0,0,.15)}
+    .row{display:flex;align-items:center;gap:12px}
+    .avatar{width:88px;height:88px;border-radius:20px;object-fit:cover;border:3px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.2);background:#eaeaea}
+    .name{font-weight:700}
+    .role{font-size:12px;opacity:.8}
+    .err{color:#c62828;text-align:center;margin-top:8px}
+    .ok{color:#2e7d32;text-align:center;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="text-align:center;color:#fff;text-shadow:0 6px 16px rgba(0,0,0,.25)">Employees</h1>
+
+    <!-- ฟอร์มเพิ่มพนักงาน (แสดงเฉพาะแอดมิน) -->
+    <div id="addBox" class="card" style="max-width:520px;margin:0 auto 16px;display:none">
+      <h3>เพิ่มพนักงาน</h3>
+      <form id="addForm" class="form" style="max-width:520px">
+        <input id="name" class="input" placeholder="ชื่อ *" required>
+        <div class="row">
+          <input id="role" class="input" style="flex:1" placeholder="technician/reception/manager" value="technician">
+          <input id="phone" class="input" style="flex:1" placeholder="โทร">
+        </div>
+        <input id="email" class="input" placeholder="อีเมล">
+        <input id="photo" class="input" type="file" accept="image/*">
+        <button class="btn">Add Employee</button>
+        <div id="msg" class="err"></div>
+      </form>
+    </div>
+
+    <div id="list" class="grid"></div>
+  </div>
+
+  <script>
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    requireAuth();
+
+    const me = await api('/users/me');
+    const isAdmin = me.role === 'admin';
+    if (isAdmin) document.getElementById('addBox')?.style.setProperty('display','block');
+
+    await loadEmployees(isAdmin);
+
+    // เฉพาะแอดมิน: handle เพิ่มพนักงาน
+    if (isAdmin) {
+      const form = document.getElementById('addForm');
+      const msg  = document.getElementById('msg');
+
+      // อ้างอิง input ให้ชัดเจน
+      const nameEl  = document.getElementById('name');   // <input id="name">
+      const roleEl  = document.getElementById('role');   // <input/select id="role">
+      const phoneEl = document.getElementById('phone');  // <input id="phone">
+      const emailEl = document.getElementById('email');  // <input id="email">
+      const photoEl = document.getElementById('photo');  // <input type="file" id="photo">
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.textContent = ''; msg.className = '';
+
+        try {
+          // อ่านค่าแบบกันพัง
+          const payload = {
+            name:  nameEl?.value?.trim()  || '',
+            role:  roleEl?.value?.trim()  || undefined,
+            phone: phoneEl?.value?.trim() || undefined,
+            email: emailEl?.value?.trim() || undefined,
+          };
+          if (!payload.name) { msg.className='err'; msg.textContent='กรุณากรอกชื่อ'; return; }
+
+          const created = await api('/employees', { method:'POST', body: payload });
+
+          // ถ้ามีไฟล์รูป → อัปโหลด
+          const f = photoEl?.files?.[0];
+          if (f) {
+            const fd = new FormData();
+            fd.append('file', f);
+            const up = await fetch(`${BASE}/employees/${created.id}/photo`, {
+              method:'POST',
+              headers:{ Authorization:`Bearer ${getToken()}` },
+              body: fd
+            });
+            if (!up.ok) {
+              const d = await up.json().catch(()=>({}));
+              throw new Error(d.message || 'upload fail');
+            }
+          }
+
+          msg.className='ok'; msg.textContent='เพิ่มสำเร็จ';
+          form.reset();
+          await loadEmployees(isAdmin);
+        } catch (err) {
+          msg.className='err'; msg.textContent = err?.message || 'เพิ่มไม่สำเร็จ';
+        }
+      });
+    }
+  } catch (err) {
+    alert(err?.message || 'กรุณาเข้าสู่ระบบใหม่');
+    location.href = 'login.html';
+  }
+});
+
+async function loadEmployees(isAdmin){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  try {
+    const emps = await api('/employees');
+    if (!emps.length) { list.innerHTML = '<div class="card">ยังไม่มีพนักงาน</div>'; return; }
+
+    list.innerHTML = emps.map(e => card(e, isAdmin)).join('');
+
+    // เฉพาะ admin: ผูกอัปโหลดรูปให้แต่ละการ์ด
+    if (isAdmin) {
+      emps.forEach(e => {
+        const inp = document.getElementById(`file-${e.id}`);
+        if (inp) inp.addEventListener('change', () => uploadPhoto(e.id, inp.files?.[0]));
+      });
+    }
+  } catch (err) {
+    list.innerHTML = `<div class="card err">โหลดไม่สำเร็จ: ${escapeHtml(err?.message||'')}</div>`;
+  }
+}
+
+function card(e, isAdmin){
+  const img = e.photo_url ? imageURL(e.photo_url) : '';
+  return `
+    <div class="card">
+      <div class="row">
+        <img class="avatar" src="${img}" onerror="this.style.visibility='hidden'">
+        <div>
+          <div class="name">${escapeHtml(e.name||'')}</div>
+          <div class="role">${escapeHtml(e.role||'')}</div>
+          <div class="role" style="opacity:.9">
+            ${escapeHtml(e.email||'')}${e.phone ? ' · '+escapeHtml(e.phone) : ''}
+          </div>
+        </div>
+      </div>
+      ${isAdmin ? `
+      <div style="margin-top:10px">
+        <input id="file-${e.id}" class="E-input" type="file" accept="image/*">
+      </div>` : ``}
+    </div>
+  `;
+}
+
+async function uploadPhoto(id, file){
+  if (!file) return;
+  try{
+    const fd = new FormData(); fd.append('file', file);
+    const r = await fetch(`${BASE}/employees/${id}/photo`, {
+      method:'POST',
+      headers:{ Authorization:`Bearer ${getToken()}` },
+      body: fd
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(()=>({}));
+      throw new Error(d.message || 'อัปโหลดไม่สำเร็จ');
+    }
+    await loadEmployees(true);
+  }catch(err){
+    alert('อัปโหลดรูปไม่สำเร็จ: ' + (err?.message||''));
+  }
+}
+
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));}
+</script>
+
+</body>
+</html>
